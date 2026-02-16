@@ -14,6 +14,13 @@ const Dashboard = () => {
     // Search state
     const [searchTerm, setSearchTerm] = useState('');
 
+    const [newClient, setNewClient] = useState({
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: ''
+    });
+
     useEffect(() => {
         const getUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
