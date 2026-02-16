@@ -1,5 +1,5 @@
 
-name: 🚀 Deploy to Hostinger
+name: 🚀 Build & Deploy to Branch
 
 on:
   push:
@@ -8,13 +8,14 @@ on:
       - master
 
 jobs:
-  web-deploy:
-    name: 🎉 Deploy
+  build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Permiso necesario para crear la nueva rama
     steps:
       - name: 🚚 Get latest code
         uses: actions/checkout@v4
-      
+
       - name: 🟢 Use Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -26,18 +27,15 @@ jobs:
 
       - name: 🏗️ Build Project
         run: npm run build
+        env:
+          # Es importante pasar las variables de entorno para que Vite las incruste
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: 📂 Sync files
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      - name: 🚀 Push dist/ to hostinger-deploy branch
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          # Ajusta esto si tu subdominio apunta a otra carpeta, 
-          # Gemini dijo 'public_html/admin', así que usamos esa:
-          server-dir: admin/ 
-          local-dir: ./dist/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: hostinger-deploy
+          force_orphan: true # Crea una rama limpia con solo los archivos de producción
