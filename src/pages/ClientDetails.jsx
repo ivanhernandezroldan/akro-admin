@@ -31,6 +31,13 @@ const ClientDetails = () => {
     });
     const [editingId, setEditingId] = useState(null);
 
+    // Exercise Selector State
+    const [exerciseSearch, setExerciseSearch] = useState('');
+    const [showExerciseDropdown, setShowExerciseDropdown] = useState(false);
+    const [isCreatingExercise, setIsCreatingExercise] = useState(false);
+    const [newExerciseName, setNewExerciseName] = useState('');
+    const [newExerciseMuscle, setNewExerciseMuscle] = useState('');
+
     useEffect(() => {
         fetchClientDetails();
     }, [id]);
@@ -129,6 +136,30 @@ const ClientDetails = () => {
         setEditingId(null);
     };
 
+    const handleCreateExercise = async () => {
+        try {
+            if (!newExerciseName) return;
+
+            const { data, error } = await supabase
+                .from('exercises')
+                .insert([{ name: newExerciseName, muscle_group: newExerciseMuscle || 'General' }])
+                .select();
+
+            if (error) throw error;
+
+            const newEx = data[0];
+            setExercises([...exercises, newEx].sort((a, b) => a.name.localeCompare(b.name)));
+            setNewWorkout({ ...newWorkout, exercise_id: newEx.id });
+            setExerciseSearch(newEx.name);
+            setIsCreatingExercise(false);
+            setShowExerciseDropdown(false);
+            setNewExerciseName('');
+            setNewExerciseMuscle('');
+        } catch (error) {
+            alert('Error creating exercise: ' + error.message);
+        }
+    };
+
     const handleAddWorkout = async (e) => {
         e.preventDefault();
         try {
@@ -170,6 +201,7 @@ const ClientDetails = () => {
             notes: log.notes || '',
             date: log.date.split('T')[0]
         });
+        setExerciseSearch(log.exercises?.name || '');
         setEditingId(log.id);
         setShowWorkoutModal(true);
     };
@@ -186,6 +218,9 @@ const ClientDetails = () => {
             date: new Date().toISOString().split('T')[0]
         });
         setEditingId(null);
+        setExerciseSearch('');
+        setShowExerciseDropdown(false);
+        setIsCreatingExercise(false);
     };
 
     if (loading) return <div className="loading">Loading details...</div>;
@@ -387,18 +422,82 @@ const ClientDetails = () => {
                                         onChange={e => setNewWorkout({ ...newWorkout, date: e.target.value })}
                                     />
                                 </div>
-                                <div className="form-group">
+                                <div className="form-group" style={{ position: 'relative' }}>
                                     <label>Exercise</label>
-                                    <select
-                                        required
-                                        value={newWorkout.exercise_id}
-                                        onChange={e => setNewWorkout({ ...newWorkout, exercise_id: e.target.value })}
-                                    >
-                                        <option value="">Select Exercise</option>
-                                        {exercises.map(ex => (
-                                            <option key={ex.id} value={ex.id}>{ex.name}</option>
-                                        ))}
-                                    </select>
+                                    {!isCreatingExercise ? (
+                                        <>
+                                            <input
+                                                type="text"
+                                                placeholder="Search or Select Exercise..."
+                                                value={exerciseSearch}
+                                                onChange={(e) => {
+                                                    setExerciseSearch(e.target.value);
+                                                    setShowExerciseDropdown(true);
+                                                    if (!e.target.value) setNewWorkout({ ...newWorkout, exercise_id: '' });
+                                                }}
+                                                onFocus={() => setShowExerciseDropdown(true)}
+                                                className="search-select-input"
+                                            />
+                                            {showExerciseDropdown && (
+                                                <div className="custom-dropdown">
+                                                    {exercises
+                                                        .filter(ex => ex.name.toLowerCase().includes(exerciseSearch.toLowerCase()))
+                                                        .map(ex => (
+                                                            <div
+                                                                key={ex.id}
+                                                                className="dropdown-item"
+                                                                onClick={() => {
+                                                                    setNewWorkout({ ...newWorkout, exercise_id: ex.id });
+                                                                    setExerciseSearch(ex.name);
+                                                                    setShowExerciseDropdown(false);
+                                                                }}
+                                                            >
+                                                                {ex.name}
+                                                            </div>
+                                                        ))
+                                                    }
+                                                    {exercises.filter(ex => ex.name.toLowerCase().includes(exerciseSearch.toLowerCase())).length === 0 && (
+                                                        <div className="dropdown-item no-match">
+                                                            No matches found.
+                                                        </div>
+                                                    )}
+                                                    <div className="dropdown-divider"></div>
+                                                    <div
+                                                        className="dropdown-item create-new"
+                                                        onClick={() => {
+                                                            setNewExerciseName(exerciseSearch);
+                                                            setIsCreatingExercise(true);
+                                                            setShowExerciseDropdown(false);
+                                                        }}
+                                                    >
+                                                        + Create "{exerciseSearch || 'New Exercise'}"
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="create-exercise-form">
+                                            <div className="form-group">
+                                                <input
+                                                    autoFocus
+                                                    placeholder="Exercise Name"
+                                                    value={newExerciseName}
+                                                    onChange={e => setNewExerciseName(e.target.value)}
+                                                    style={{ marginBottom: '0.5rem' }}
+                                                />
+                                                <input
+                                                    placeholder="Muscle Group (e.g. Legs)"
+                                                    value={newExerciseMuscle}
+                                                    onChange={e => setNewExerciseMuscle(e.target.value)}
+                                                    style={{ marginBottom: '0.5rem' }}
+                                                />
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <button type="button" className="primary-button small" onClick={handleCreateExercise}>Save Exercise</button>
+                                                    <button type="button" className="secondary-button" onClick={() => setIsCreatingExercise(false)}>Cancel</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="form-row">
                                     <div className="form-group half">
