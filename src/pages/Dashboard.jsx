@@ -18,7 +18,8 @@ const Dashboard = () => {
         first_name: '',
         last_name: '',
         email: '',
-        phone: ''
+        phone: '',
+        emergency_contact: ''
     });
 
     useEffect(() => {
@@ -62,9 +63,26 @@ const Dashboard = () => {
 
             setClients([...data, ...clients]);
             setShowNewClientModal(false);
-            setNewClient({ first_name: '', last_name: '', email: '', phone: '' });
+            setNewClient({ first_name: '', last_name: '', email: '', phone: '', emergency_contact: '' });
         } catch (error) {
             alert('Error creating client: ' + error.message);
+        }
+    };
+
+    const handleDeleteClient = async (id, e) => {
+        e.stopPropagation();
+        if (!window.confirm('Are you sure you want to delete this client? This action cannot be undone.')) return;
+
+        try {
+            const { error } = await supabase
+                .from('clients')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            setClients(clients.filter(client => client.id !== id));
+        } catch (error) {
+            alert('Error deleting client: ' + error.message);
         }
     };
 
@@ -156,7 +174,15 @@ const Dashboard = () => {
                                                     </span>
                                                 </td>
                                                 <td data-label="Joined Date">{new Date(client.created_at).toLocaleDateString()}</td>
-                                                <td data-label="Action">→</td>
+                                                <td data-label="Action">
+                                                    <button
+                                                        className="icon-button delete-button"
+                                                        onClick={(e) => handleDeleteClient(client.id, e)}
+                                                        title="Delete Client"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -194,6 +220,24 @@ const Dashboard = () => {
                                     type="email"
                                     value={newClient.email}
                                     onChange={e => setNewClient({ ...newClient, email: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Phone</label>
+                                <input
+                                    type="tel"
+                                    value={newClient.phone}
+                                    onChange={e => setNewClient({ ...newClient, phone: e.target.value })}
+                                    placeholder="+34 600..."
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Emergency Contact</label>
+                                <input
+                                    type="text"
+                                    value={newClient.emergency_contact}
+                                    onChange={e => setNewClient({ ...newClient, emergency_contact: e.target.value })}
+                                    placeholder="Name and Phone"
                                 />
                             </div>
                             <div className="modal-actions">

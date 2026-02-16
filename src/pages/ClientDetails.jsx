@@ -38,6 +38,16 @@ const ClientDetails = () => {
     const [newExerciseName, setNewExerciseName] = useState('');
     const [newExerciseMuscle, setNewExerciseMuscle] = useState('');
 
+    // Client Edit State
+    const [showEditClientModal, setShowEditClientModal] = useState(false);
+    const [editClientData, setEditClientData] = useState({
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        emergency_contact: ''
+    });
+
     useEffect(() => {
         fetchClientDetails();
     }, [id]);
@@ -223,6 +233,35 @@ const ClientDetails = () => {
         setIsCreatingExercise(false);
     };
 
+    const handleUpdateClient = async (e) => {
+        e.preventDefault();
+        try {
+            const { data, error } = await supabase
+                .from('clients')
+                .update(editClientData)
+                .eq('id', id)
+                .select();
+
+            if (error) throw error;
+
+            setClient(data[0]);
+            setShowEditClientModal(false);
+        } catch (error) {
+            alert('Error updating client: ' + error.message);
+        }
+    };
+
+    const openEditClientModal = () => {
+        setEditClientData({
+            first_name: client.first_name,
+            last_name: client.last_name,
+            email: client.email,
+            phone: client.phone || '',
+            emergency_contact: client.emergency_contact || ''
+        });
+        setShowEditClientModal(true);
+    };
+
     if (loading) return <div className="loading">Loading details...</div>;
     if (!client) return <div className="error">Client not found</div>;
 
@@ -267,7 +306,10 @@ const ClientDetails = () => {
                     {activeTab === 'overview' && (
                         <div className="overview-grid">
                             <div className="card">
-                                <h3>Contact Info</h3>
+                                <div className="card-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <h3>Contact Info</h3>
+                                    <button className="edit-icon-button" onClick={openEditClientModal}>✎</button>
+                                </div>
                                 <p><strong>Email:</strong> {client.email}</p>
                                 <p><strong>Phone:</strong> {client.phone || 'N/A'}</p>
                                 <p><strong>Emergency Contact:</strong> {client.emergency_contact || 'N/A'}</p>
@@ -551,6 +593,62 @@ const ClientDetails = () => {
                                 <div className="modal-actions">
                                     <button type="button" onClick={closeWorkoutModal} className="secondary-button">Cancel</button>
                                     <button type="submit" className="primary-button">{editingId ? 'Update Log' : 'Save Log'}</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {showEditClientModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <h2>Edit Client Details</h2>
+                            <form onSubmit={handleUpdateClient}>
+                                <div className="form-row">
+                                    <div className="form-group half">
+                                        <label>First Name</label>
+                                        <input
+                                            required
+                                            value={editClientData.first_name}
+                                            onChange={e => setEditClientData({ ...editClientData, first_name: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="form-group half">
+                                        <label>Last Name</label>
+                                        <input
+                                            required
+                                            value={editClientData.last_name}
+                                            onChange={e => setEditClientData({ ...editClientData, last_name: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label>Email</label>
+                                    <input
+                                        type="email"
+                                        value={editClientData.email}
+                                        onChange={e => setEditClientData({ ...editClientData, email: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Phone</label>
+                                    <input
+                                        type="tel"
+                                        value={editClientData.phone}
+                                        onChange={e => setEditClientData({ ...editClientData, phone: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Emergency Contact</label>
+                                    <input
+                                        type="text"
+                                        value={editClientData.emergency_contact}
+                                        onChange={e => setEditClientData({ ...editClientData, emergency_contact: e.target.value })}
+                                    />
+                                </div>
+                                <div className="modal-actions">
+                                    <button type="button" onClick={() => setShowEditClientModal(false)} className="secondary-button">Cancel</button>
+                                    <button type="submit" className="primary-button">Save Changes</button>
                                 </div>
                             </form>
                         </div>
