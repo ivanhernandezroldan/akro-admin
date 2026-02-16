@@ -38,4 +38,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           publish_branch: hostinger-deploy
-          force_orphan: true # Crea una rama limpia con solo los archivos de producción
+          force_orphan: false # IMPORTANTE: false para mantener el historial y que "git pull" funcione en Hostinger
+          keep_files: false   # Limpia la rama antes de copiar los nuevos archivos
