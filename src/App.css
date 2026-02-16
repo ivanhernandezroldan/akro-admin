@@ -1,0 +1,13 @@
+#root {
+  min-height: 100vh;
+}
+
+.loading-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-family: 'Inter', sans-serif;
+}
