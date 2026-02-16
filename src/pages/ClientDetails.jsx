@@ -236,15 +236,14 @@ const ClientDetails = () => {
     const handleUpdateClient = async (e) => {
         e.preventDefault();
         try {
-            const { data, error } = await supabase
+            const { error } = await supabase
                 .from('clients')
                 .update(editClientData)
-                .eq('id', id)
-                .select();
+                .eq('id', id);
 
             if (error) throw error;
 
-            setClient(data[0]);
+            await fetchClientDetails();
             setShowEditClientModal(false);
         } catch (error) {
             alert('Error updating client: ' + error.message);
